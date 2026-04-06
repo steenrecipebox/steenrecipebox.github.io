@@ -1,0 +1,71 @@
+---
+// src/pages/recipebox/[slug].astro
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const recipes = await getCollection('recipebox');
+  return recipes.map(recipe => ({
+    params: { slug: recipe.slug },
+    props:  { recipe },
+  }));
+}
+
+const { recipe } = Astro.props;
+const { Content } = await recipe.render();
+const d = recipe.data;
+---
+
+<Base
+  title={`${d.title} — The Recipe Box`}
+  description={d.description}
+>
+  <div class="recipe-page">
+
+    <a href="/" class="back-link">← all recipes</a>
+
+    <header class="recipe-header">
+      <h1 class="recipe-h1">
+        {d.title}
+        {d.favorite && <span class="fave-star" title="Family favorite" style="font-size:16px;"> ★</span>}
+      </h1>
+
+      {d.description && (
+        <p class="recipe-desc-lg">{d.description}</p>
+      )}
+
+      <div class="recipe-stat-row">
+        {d.time && (
+          <span class="recipe-stat">
+            <strong>{d.time}</strong>
+          </span>
+        )}
+        {d.servings && (
+          <span class="recipe-stat">
+            <strong>{d.servings}</strong>
+          </span>
+        )}
+        {d.yield && (
+          <span class="recipe-stat">
+            <strong>{d.yield}</strong>
+          </span>
+        )}
+      </div>
+
+      <div class="recipe-tags" style="margin-bottom: 12px;">
+        {d.tags.map(tag => (
+          <a href={`/?tag=${tag}`} class="tag">{tag}</a>
+        ))}
+      </div>
+
+      {d.source && (
+        <p class="recipe-source">— {d.source}</p>
+      )}
+    </header>
+
+    <article class="prose">
+      <Content />
+    </article>
+
+  </div>
+</Base>

@@ -1,0 +1,57 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const recipes  = await getCollection('recipebox');
+const favorites = recipes.filter(r => r.data.favorite).length;
+const allTags   = [...new Set(recipes.flatMap(r => r.data.tags))];
+---
+
+<Base title="About — The Recipe Box">
+  <div class="about-page">
+    <p class="section-label" style="margin-bottom:24px;">// about this box</p>
+    <div class="about-text">
+      <p>
+        This is the family recipe box — a place to collect, share, and find recipes
+        that actually get made. Add a new recipe by dropping a Markdown file into the
+        <strong>recipebox/</strong> folder and pushing to GitHub. It appears on the site automatically.
+      </p>
+      <p style="margin-top:1.2em;">
+        Currently holding <strong>{recipes.length} recipes</strong>,
+        {favorites > 0 && <>{favorites} marked as favorites, </>}
+        across {allTags.length} tags:
+        {allTags.sort().join(', ')}.
+      </p>
+    </div>
+
+    <div style="margin-top:40px;padding-top:28px;border-top:1px solid var(--border);">
+      <p class="section-label" style="margin-bottom:16px;">// how to add a recipe</p>
+      <div class="about-text">
+        <p>
+          Create a file in <strong>src/content/recipebox/my-recipe-name.md</strong>
+          with this frontmatter at the top:
+        </p>
+      </div>
+      <div style="margin-top:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;padding:18px 20px;font-size:11.5px;line-height:1.8;color:var(--fg-b);">
+        <div style="color:var(--fg-m);">---</div>
+        <div><span style="color:var(--fg-m);">title:</span> "Recipe Title"</div>
+        <div><span style="color:var(--fg-m);">description:</span> "Short description."</div>
+        <div><span style="color:var(--fg-m);">tags:</span> [dinner, chicken, quick]</div>
+        <div><span style="color:var(--fg-m);">servings:</span> "4 servings"</div>
+        <div><span style="color:var(--fg-m);">time:</span> "30 min"</div>
+        <div><span style="color:var(--fg-m);">yield:</span> "1 loaf"    <span style="color:var(--fg-m);"># optional</span></div>
+        <div><span style="color:var(--fg-m);">source:</span> "Grandma's box"  <span style="color:var(--fg-m);"># optional</span></div>
+        <div><span style="color:var(--fg-m);">favorite:</span> true          <span style="color:var(--fg-m);"># optional</span></div>
+        <div style="color:var(--fg-m);">---</div>
+        <br/>
+        <div style="color:var(--fg-m);">## Ingredients</div>
+        <div>- Item one</div>
+        <div>- Item two</div>
+        <br/>
+        <div style="color:var(--fg-m);">## Instructions</div>
+        <div>1. Step one</div>
+        <div>2. Step two</div>
+      </div>
+    </div>
+  </div>
+</Base>

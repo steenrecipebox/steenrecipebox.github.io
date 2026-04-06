@@ -1,0 +1,197 @@
+---
+// src/pages/index.astro
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const allRecipes = (await getCollection('recipebox'))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+
+// Collect all unique tags across all recipes, sorted
+const allTags = [...new Set(
+  allRecipes.flatMap(r => r.data.tags)
+)].sort();
+
+const total = allRecipes.length;
+
+// Serialize for client-side JS
+const recipesJson = JSON.stringify(allRecipes.map(r => ({
+  slug:        r.slug,
+  title:       r.data.title,
+  description: r.data.description ?? '',
+  tags:        r.data.tags,
+  time:        r.data.time ?? '',
+  servings:    r.data.servings ?? '',
+  yield:       r.data.yield ?? '',
+  favorite:    r.data.favorite,
+})));
+---
+
+<Base title="The Recipe Box — All Recipes">
+  <main>
+
+    <!-- Filter bar -->
+    <div class="filter-wrap">
+      <div class="search-row">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="search recipes..." autocomplete="off" spellcheck="false" />
+        </div>
+        <span class="count-lbl" id="countLabel">{total} recipes</span>
+      </div>
+
+      <div class="tag-row">
+        <button class="tag-filter fave-btn" data-filter="favorite">★ favorites</button>
+        <span style="color:var(--border);font-size:11px;padding:0 2px;">|</span>
+        {allTags.map(tag => (
+          <button class="tag-filter" data-filter={tag}>{tag}</button>
+        ))}
+        <button class="tag-filter" id="clearBtn" style="display:none;border-color:var(--fg-m);color:var(--fg);">✕ clear</button>
+      </div>
+    </div>
+
+    <!-- Recipe list -->
+    <ul class="recipe-list" id="recipeList">
+      {allRecipes.map(recipe => (
+        <li
+          class="recipe-item"
+          data-slug={recipe.slug}
+          data-title={recipe.data.title.toLowerCase()}
+          data-desc={(recipe.data.description ?? '').toLowerCase()}
+          data-tags={recipe.data.tags.join(',')}
+          data-favorite={recipe.data.favorite ? 'true' : 'false'}
+          onclick={`window.location='/recipebox/${recipe.slug}'`}
+          role="link"
+          tabindex="0"
+        >
+          <div class="recipe-main">
+            <div class="recipe-title-row">
+              <span class="recipe-title">{recipe.data.title}</span>
+              {recipe.data.favorite && <span class="fave-star" title="Family favorite">★</span>}
+            </div>
+            {recipe.data.description && (
+              <span class="recipe-desc">{recipe.data.description}</span>
+            )}
+            <div class="recipe-meta">
+              {recipe.data.time && (
+                <span class="recipe-stat"><strong>{recipe.data.time}</strong></span>
+              )}
+              {recipe.data.time && (recipe.data.servings || recipe.data.yield) && (
+                <span class="recipe-meta-sep">·</span>
+              )}
+              {recipe.data.servings && (
+                <span>{recipe.data.servings}</span>
+              )}
+              {recipe.data.yield && !recipe.data.servings && (
+                <span>{recipe.data.yield}</span>
+              )}
+            </div>
+            <div class="recipe-tags">
+              {recipe.data.tags.map(tag => (
+                <span class="tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+          <span class="recipe-arrow">→</span>
+        </li>
+      ))}
+    </ul>
+
+    <div class="empty-state" id="emptyState" style="display:none">
+      // no recipes match — <button onclick="clearAll()" style="background:none;border:none;font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;text-decoration:underline;">clear filters</button>
+    </div>
+
+  </main>
+</Base>
+
+<script define:vars={{ recipesJson }}>
+  const recipes = JSON.parse(recipesJson);
+  let activeTag   = null;
+  let searchText  = '';
+
+  const list      = document.getElementById('recipeList');
+  const empty     = document.getElementById('emptyState');
+  const countLbl  = document.getElementById('countLabel');
+  const clearBtn  = document.getElementById('clearBtn');
+  const searchEl  = document.getElementById('searchInput');
+
+  function render() {
+    let visible = 0;
+    const items = list.querySelectorAll('.recipe-item');
+
+    items.forEach(item => {
+      const title    = item.dataset.title    ?? '';
+      const desc     = item.dataset.desc     ?? '';
+      const tagsStr  = item.dataset.tags     ?? '';
+      const isFave   = item.dataset.favorite === 'true';
+
+      const matchSearch =
+        !searchText ||
+        title.includes(searchText) ||
+        desc.includes(searchText)  ||
+        tagsStr.includes(searchText);
+
+      const matchTag =
+        !activeTag ||
+        (activeTag === 'favorite' ? isFave : tagsStr.split(',').includes(activeTag));
+
+      const show = matchSearch && matchTag;
+      item.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    const total = recipes.length;
+    countLbl.textContent = visible === total
+      ? `${total} recipe${total !== 1 ? 's' : ''}`
+      : `${visible} of ${total}`;
+
+    empty.style.display       = visible === 0 ? '' : 'none';
+    clearBtn.style.display    = (activeTag || searchText) ? '' : 'none';
+  }
+
+  // Search
+  searchEl.addEventListener('input', e => {
+    searchText = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  // Tag filter buttons
+  document.querySelectorAll('.tag-filter[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.filter;
+      if (activeTag === f) {
+        activeTag = null;
+        btn.classList.remove('active');
+      } else {
+        document.querySelectorAll('.tag-filter').forEach(b => b.classList.remove('active'));
+        activeTag = f;
+        btn.classList.add('active');
+      }
+      render();
+    });
+  });
+
+  // Clear
+  window.clearAll = function () {
+    activeTag  = null;
+    searchText = '';
+    searchEl.value = '';
+    document.querySelectorAll('.tag-filter').forEach(b => b.classList.remove('active'));
+    render();
+  };
+
+  clearBtn.addEventListener('click', clearAll);
+
+  // Keyboard navigation on list items
+  list.querySelectorAll('.recipe-item').forEach(item => {
+    item.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        window.location = `/recipebox/${item.dataset.slug}`;
+      }
+    });
+  });
+
+  render();
+</script>
