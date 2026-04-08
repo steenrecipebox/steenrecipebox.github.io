@@ -1,7 +1,7 @@
 ---
 title: "Aunt Bonnie’s Taco Soup"
 description: "Aunt Bonnie’s Taco Soup"
-tags: [beef, , ]
+tags: [beef]
 servings: "8 servings"
 // time: "30 min"
 // yield: "1 loaf" # optional
