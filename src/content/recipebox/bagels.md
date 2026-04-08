@@ -1,7 +1,7 @@
 ---
 title: "Bagels"
 description: "Bagels"
-tags: [, , ]
+tags: [bread]
 // servings: "4 servings"
 // time: "30 min"
 // yield: "1 loaf" # optional
