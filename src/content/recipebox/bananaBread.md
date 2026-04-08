@@ -1,7 +1,7 @@
 ---
 title: "Banana Bread"
 description: "Banana Bread"
-tags: [dessert, , ]
+tags: [dessert]
 // servings: "4 servings"
 // time: "30 min"
 // yield: "1 loaf" # optional
