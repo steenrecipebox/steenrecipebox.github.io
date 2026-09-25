@@ -6,7 +6,7 @@ tags: [bread]
 # time: "30 min"
 yield: "3 small loaves or 2 dozen rolls" # optional
 source: "Once upon a chef with Jenn Segal" # optional
-favorite: true # optional
+favorite: false # optional
 ---
 
 ## Ingredients
